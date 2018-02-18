@@ -254,6 +254,13 @@ describe('mongodb connector', function() {
     Category = db.define('Category', {
       title: {type: String, length: 255, index: true},
       posts: {type: [db.ObjectID], index: true},
+    }, {
+      indexes: {
+        'title_case_insensitive': {
+          keys: {title: 1},
+          options: {collation: {locale: 'en', strength: 1}},
+        },
+      },
     });
 
     PostWithStringIdAndRenamedColumns = db.define(
@@ -300,7 +307,9 @@ describe('mongodb connector', function() {
             PostWithNumberUnderscoreId.destroyAll(function() {
               PostWithStringId.destroyAll(function() {
                 PostWithDisableDefaultSort.destroyAll(function() {
-                  done();
+                  Category.destroyAll(function() {
+                    done();
+                  });
                 });
               });
             });
@@ -489,6 +498,22 @@ describe('mongodb connector', function() {
         /* eslint-enable camelcase */
 
         indexes.should.eql(result);
+        done(err, result);
+      });
+    });
+  });
+
+  it('should create case insensitive indexes', function(done) {
+    db.automigrate('Category', function() {
+      db.connector.db.collection('Category').indexes(function(err, result) {
+        var indexes = [
+          { name: '_id_', key: { _id: 1 }},
+          { name: 'title_1', key: { title: 1 }},
+          { name: 'title_case_insensitive', key: { title: 1 }, collation: { locale: 'en', strength: 1 }},
+          { name: 'posts_1', key: { posts: 1 }},
+        ];
+
+        result.should.containDeep(indexes);
         done(err, result);
       });
     });
@@ -2586,6 +2611,22 @@ describe('mongodb connector', function() {
       ) {
         should.exist(err);
         done();
+      });
+    });
+  });
+
+  it('should allow to find using case insensitive index', function(done) {
+    Category.create({ title: 'My Category' }, function(err, category1) {
+      should.not.exists(err);
+      Category.create({ title: 'MY CATEGORY' }, function(err, category2) {
+        should.not.exists(err);
+
+        Category.find({ where: { title: 'my cATEGory' }}, { collation: { locale: 'en', strength: 1 }},
+          function(err, categories) {
+            should.not.exist(err);
+            categories.should.have.length(2);
+            done();
+          });
       });
     });
   });
