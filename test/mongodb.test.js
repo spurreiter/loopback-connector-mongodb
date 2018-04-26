@@ -2617,9 +2617,9 @@ describe('mongodb connector', function() {
 
   it('should allow to find using case insensitive index', function(done) {
     Category.create({ title: 'My Category' }, function(err, category1) {
-      should.not.exists(err);
+      should.not.exist(err);
       Category.create({ title: 'MY CATEGORY' }, function(err, category2) {
-        should.not.exists(err);
+        should.not.exist(err);
 
         Category.find({ where: { title: 'my cATEGory' }}, { collation: { locale: 'en', strength: 1 }},
           function(err, categories) {
