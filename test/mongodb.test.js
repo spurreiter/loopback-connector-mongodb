@@ -507,10 +507,10 @@ describe('mongodb connector', function() {
     db.automigrate('Category', function() {
       db.connector.db.collection('Category').indexes(function(err, result) {
         var indexes = [
-          { name: '_id_', key: { _id: 1 }},
-          { name: 'title_1', key: { title: 1 }},
-          { name: 'title_case_insensitive', key: { title: 1 }, collation: { locale: 'en', strength: 1 }},
-          { name: 'posts_1', key: { posts: 1 }},
+          {name: '_id_', key: {_id: 1}},
+          {name: 'title_1', key: {title: 1}},
+          {name: 'title_case_insensitive', key: {title: 1}, collation: {locale: 'en', strength: 1}},
+          {name: 'posts_1', key: {posts: 1}},
         ];
 
         result.should.containDeep(indexes);
@@ -2616,12 +2616,12 @@ describe('mongodb connector', function() {
   });
 
   it('should allow to find using case insensitive index', function(done) {
-    Category.create({ title: 'My Category' }, function(err, category1) {
+    Category.create({title: 'My Category'}, function(err, category1) {
       should.not.exist(err);
-      Category.create({ title: 'MY CATEGORY' }, function(err, category2) {
+      Category.create({title: 'MY CATEGORY'}, function(err, category2) {
         should.not.exist(err);
 
-        Category.find({ where: { title: 'my cATEGory' }}, { collation: { locale: 'en', strength: 1 }},
+        Category.find({where: {title: 'my cATEGory'}}, {collation: {locale: 'en', strength: 1}},
           function(err, categories) {
             should.not.exist(err);
             categories.should.have.length(2);
