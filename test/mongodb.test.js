@@ -12,6 +12,7 @@ var testUtils = require('../lib/test-utils');
 var async = require('async');
 var sinon = require('sinon');
 var sanitizeFilter = require('../lib/mongodb').sanitizeFilter;
+var sanitizeCollation = require('../lib/mongodb').sanitizeCollation;
 
 var GeoPoint = require('loopback-datasource-juggler').GeoPoint;
 
@@ -2631,6 +2632,22 @@ describe('mongodb connector', function() {
     });
   });
 
+  it('should allow to find using case insensitive index via filter', function(done) {
+    Category.create({title: 'My Category'}, function(err, category1) {
+      should.not.exist(err);
+      Category.create({title: 'MY CATEGORY'}, function(err, category2) {
+        should.not.exist(err);
+
+        Category.find({where: {title: 'my cATEGory'}, collation: {locale: 'en', strength: 1}},
+          function(err, categories) {
+            should.not.exist(err);
+            categories.should.have.length(2);
+            done();
+          });
+      });
+    });
+  });
+
   it('should allow to find using like', function(done) {
     Post.create({title: 'My Post', content: 'Hello'}, function(err, post) {
       Post.find({where: {title: {like: 'M.+st'}}}, function(err, posts) {
@@ -3335,6 +3352,32 @@ describe('mongodb connector', function() {
       const input = {key: 'value', random$key: 'a value', mapReduce: 'map'};
       const out = sanitizeFilter(input);
       out.should.deepEqual({key: 'value', random$key: 'a value'});
+    });
+  });
+
+  context('sanitizeCollation()', () => {
+    it('returns undefined if not an object', () => {
+      const input = false;
+      const out = sanitizeCollation(input);
+      should(out).equal(undefined);
+    });
+
+    it('returns the collation if options.disableSanitization is true', () => {
+      const input = {key: 'value', $where: 'a value'};
+      const out = sanitizeCollation(input, {disableSanitization: true});
+      out.should.deepEqual(input);
+    });
+
+    it('removes `$where` property', () => {
+      const input = {$where: 'a value', locale: 'en', strength: 1};
+      const out = sanitizeCollation(input);
+      out.should.deepEqual({locale: 'en', strength: 1});
+    });
+
+    it('removes properties with wrong type in it', () => {
+      const input = {locale: 'en', strength: '1.0', backwards: 'false'};
+      const out = sanitizeCollation(input);
+      out.should.deepEqual({locale: 'en'});
     });
   });
 
